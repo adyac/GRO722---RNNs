@@ -1,0 +1,9 @@
+.conda/
+__pycache__/
+*.pt
+data/
+*.html
+*.pdf
+*.pptx
+*.txt
+*.drawio
