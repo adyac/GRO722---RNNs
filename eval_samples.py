@@ -34,16 +34,26 @@ from models import trajectory2seq
 # ── model loading ─────────────────────────────────────────────────────────────
 
 def load_model(model_path, dataset, device):
+    checkpoint = torch.load(model_path, map_location=device)
+
+    # infer hidden_dim and n_layers from checkpoint so the model matches
+    # regardless of what values were used during training
+    # fc.weight shape is (dict_size, hidden_dim)
+    hidden_dim = checkpoint['fc.weight'].shape[1]
+    # count LSTM layers by looking for weight_ih_l0, weight_ih_l1, ...
+    n_layers = sum(1 for k in checkpoint if k.startswith('encoder.weight_ih_l')
+                   and '_reverse' not in k)
+
     model = trajectory2seq(
-        hidden_dim=18,
-        n_layers=1,
+        hidden_dim=hidden_dim,
+        n_layers=n_layers,
         symb2int=dataset.symb2int,
         int2symb=dataset.int2symb,
         dict_size=dataset.dict_size,
         device=device,
         maxlen=dataset.max_len,
     )
-    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.load_state_dict(checkpoint)
     model.eval()
     return model
 
